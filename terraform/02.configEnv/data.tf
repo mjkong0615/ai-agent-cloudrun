@@ -1,7 +1,15 @@
-data "terraform_remote_state" "onboard-demo-project" {
-  backend = "local"
+# data "terraform_remote_state" "onboard-demo-project" {
+#   backend = "local"
 
+#   config = {
+#     path = "../01.project/terraform.tfstate"
+#   }
+# }
+
+data "terraform_remote_state" "onboard-demo-project" {
+  backend = "gcs"
   config = {
-    path = "../01.project/terraform.tfstate"
+    bucket = "onboard-nonprod-remote-state-bucket"
+    prefix = "project"
   }
 }
