@@ -3,6 +3,10 @@ variable "REGION" {}
 variable "BILLING_ACCOUNT" {}
 variable "MEMBER" {}
 
-variable "app_name" {
+variable "mcpserver_name" {
     default = "zoo-mcp-server"
+}
+
+variable "zoo_agent_name" {
+    default = "zoo-guide-agent"
 }

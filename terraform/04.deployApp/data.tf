@@ -14,7 +14,7 @@ data "terraform_remote_state" "config_env" {
     }
 }
 
-data "terraform_remote_state" "project" {
+data "terraform_remote_state" "onboard-demo-project" {
     backend = "gcs"
     config = {
         bucket = "onboard-nonprod-remote-state-bucket"

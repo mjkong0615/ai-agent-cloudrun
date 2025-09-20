@@ -13,6 +13,10 @@ output "sa_display_name" {
   value       = google_service_account.service_account.display_name
 }
 
+output "client_sa_email" {
+  value       = google_service_account.onboard-client-sa.email
+}
+
 output "docker_repo_id" {
   value = google_artifact_registry_repository.onboard-repo.id
 }

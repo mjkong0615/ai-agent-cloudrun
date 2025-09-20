@@ -17,6 +17,13 @@ resource "google_project_iam_member" "sa-iam" {
   member = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+resource "google_project_iam_member" "client-sa-iam" {
+  count = length( local.project_iam_roles)
+  project = local.project_id
+  role = local.project_iam_roles[count.index]
+  member = "serviceAccount:${google_service_account.onboard-client-sa.email}"
+}
+
 resource "google_artifact_registry_repository" "onboard-repo" {
   project       = local.project_id
   location      = var.REGION
