@@ -15,3 +15,15 @@ variable "auto_create_subnetworks" {
 variable "mtu" {
     default = 1460
 }
+
+variable "lb_name" {
+    default = "zooagent-lb"
+}
+
+variable "ssl" {
+    default = true
+}
+
+variable "domain" {
+    default = "zooagent.com"
+}

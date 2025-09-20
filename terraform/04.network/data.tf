@@ -13,3 +13,11 @@ data "terraform_remote_state" "onboard-demo-project" {
     prefix = "project"
   }
 }
+
+data "terraform_remote_state" "deploy-app" {
+  backend = "gcs"
+  config = {
+    bucket = "onboard-nonprod-remote-state-bucket"
+    prefix = "deploy-app"
+  }
+}

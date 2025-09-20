@@ -51,33 +51,41 @@ resource "google_cloud_run_v2_service" "mcpapp" {
   }
 
   depends_on = [
-    null_resource.docker_build_push
+    null_resource.mcp-server-image-build
   ]
 }
 
 resource "google_cloud_run_v2_service" "zooagent" {
   project = local.project_id
-  name     = var.app_name
+  name     = var.zoo_agent_name
   location = var.REGION
   client   = "terraform"
   deletion_protection=false
 
   template {
     containers {
+      ports {
+        container_port = 8000
+      }
+      startup_probe {
+        http_get {
+          port = 8000
+        }
+      }
       image = local.zoo_mcp_agent_image
     }
     service_account = data.terraform_remote_state.config_env.outputs.client_sa_email
   }
 
   depends_on = [
-    null_resource.docker_build_push
+    null_resource.zoo-guide-server-image-build
   ]
 }
 
-# resource "google_cloud_run_v2_service_iam_member" "noauth" {
-#   project = local.project_id
-#   location = google_cloud_run_v2_service.mcpapp.location
-#   name     = google_cloud_run_v2_service.mcpapp.name
-#   role     = "roles/run.invoker"
-#   member   = "allUsers"
-# }
+resource "google_cloud_run_v2_service_iam_member" "noauth" {
+  project = local.project_id
+  location = google_cloud_run_v2_service.zooagent.location
+  name     = google_cloud_run_v2_service.zooagent.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
