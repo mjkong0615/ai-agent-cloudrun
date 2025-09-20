@@ -13,3 +13,11 @@ data "terraform_remote_state" "config_env" {
         prefix = "config"
     }
 }
+
+data "terraform_remote_state" "project" {
+    backend = "gcs"
+    config = {
+        bucket = "onboard-nonprod-remote-state-bucket"
+        prefix = "project"
+    }
+}

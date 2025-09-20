@@ -2,11 +2,12 @@ locals {
   org_boolean_policies = [
     "compute.requireOsLogin",
     "compute.requireShieldedVm",
-    "iam.disableServiceAccountKeyCreation"
+    "iam.disableServiceAccountKeyCreation",
   ]
 
   org_list_policies = [
-    "compute.vmExternalIpAccess"
+    "compute.vmExternalIpAccess",
+    "iam.allowedPolicyMemberDomains"
   ]
 
   project_list_services = [
@@ -15,11 +16,13 @@ locals {
     "run.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
+    "aiplatform.googleapis.com",
     "containerregistry.googleapis.com"
   ]
 
   project_iam_roles = [
-    "roles/storage.objectUser"
+    "roles/storage.objectUser",
+    "roles/artifactregistry.admin"
   ]
 
 }

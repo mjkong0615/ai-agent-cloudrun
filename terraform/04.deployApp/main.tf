@@ -6,13 +6,39 @@ resource "null_resource" "docker_build_push" {
   provisioner "local-exec" {
     command = <<-EOT
       # Build the Docker image
-      docker build -t ${data.terraform_remote_state.config_env.outputs.docker_repo_uri}/mcpapp:latest ../../mcp-on-cloudrun
+      docker build -t ${local.image} ../../zoo-mcp-server
 
       # Configure docker to authenticate with GCP
-      gcloud auth configure-docker ${data.terraform_remote_state.config_env.outputs.docker_repo_uri} --quiet
+      gcloud auth configure-docker ${var.REGION}-docker.pkg.dev --quiet
 
       # Push the image
-      docker push ${data.terraform_remote_state.config_env.outputs.docker_repo_uri}/mcpapp:latest
+      docker push ${local.image}
     EOT
   }
 }
+
+resource "google_cloud_run_v2_service" "mcpapp" {
+  project = local.project_id
+  name     = var.app_name
+  location = var.REGION
+  client   = "terraform"
+
+  template {
+    containers {
+      image = local.image
+    }
+    service_account = data.terraform_remote_state.config_env.outputs.sa_email
+  }
+
+  depends_on = [
+    null_resource.docker_build_push
+  ]
+}
+
+# resource "google_cloud_run_v2_service_iam_member" "noauth" {
+#   project = local.project_id
+#   location = google_cloud_run_v2_service.mcpapp.location
+#   name     = google_cloud_run_v2_service.mcpapp.name
+#   role     = "roles/run.invoker"
+#   member   = "allUsers"
+# }
