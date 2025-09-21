@@ -17,7 +17,9 @@ locals {
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
     "aiplatform.googleapis.com",
-    "containerregistry.googleapis.com"
+    "containerregistry.googleapis.com",
+    "modelarmor.googleapis.com",
+    "dlp.googleapis.com"
   ]
 
   project_iam_roles = [

@@ -12,6 +12,12 @@ from google.adk.tools.langchain_tool import LangchainTool
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 
+from typing import Optional
+from google.genai import types
+from google.cloud import modelarmor_v1
+from google.adk.models import LlmResponse, LlmRequest
+from google.adk.agents.callback_context import CallbackContext
+
 import google.auth
 import google.auth.transport.requests
 import google.oauth2.id_token
@@ -24,6 +30,89 @@ cloud_logging_client.setup_logging()
 load_dotenv()
 
 model_name = os.getenv("MODEL")
+
+template_model_id = os.getenv("MODEL_ARMOR_ENDPOINT")
+client = modelarmor_v1.ModelArmorClient(transport="rest", client_options = {"api_endpoint" : "modelarmor.us-central1.rep.googleapis.com"})
+
+def model_armor_analyze(prompt: str):
+    user_prompt_data = modelarmor_v1.DataItem()
+    user_prompt_data.text = prompt
+
+    # noinspection PyTypeChecker
+    request = modelarmor_v1.SanitizeUserPromptRequest(
+        name=template_model_id,
+        user_prompt_data=user_prompt_data,
+    )
+    response = client.sanitize_user_prompt(request=request)
+    print(response)
+    jailbreak = response.sanitization_result.filter_results.get("pi_and_jailbreak")
+    sensitive_data = response.sanitization_result.filter_results.get("sdp")
+
+    return jailbreak, sensitive_data
+
+
+def guardrail_function(callback_context: CallbackContext, llm_request: LlmRequest) -> Optional[LlmResponse]:
+    agent_name = callback_context.agent_name
+    print(f"[Callback] Before model call for agent: {agent_name}")
+
+    pii_found = callback_context.state.get("PII", False)
+
+    last_user_message = ""
+    print("----------------------------------------------------")
+    print(llm_request.contents)
+    if llm_request.contents and llm_request.contents[-1].role == 'user':
+        if llm_request.contents[-1].parts:
+            last_user_message = llm_request.contents[-1].parts[0].text
+    print(f"[Callback] Inspecting last user message: '{last_user_message}'")
+
+    if pii_found and last_user_message.lower() != "yes":
+        return LlmResponse(
+            content=types.Content(
+                role="model",
+                parts=[types.Part(text="Please respond Yes/No to continue")]
+            )
+        )
+    elif pii_found and last_user_message.lower() == "yes":
+        callback_context.state["PII"] = False
+        return None
+
+    if last_user_message != None:
+        print("===============================================")
+        print(last_user_message)
+        print("===============================================")
+        jailbreak, sensitive_data = model_armor_analyze(last_user_message)
+        if sensitive_data and sensitive_data.sdp_filter_result and sensitive_data.sdp_filter_result.deidentify_result:
+            if sensitive_data.sdp_filter_result.deidentify_result.match_state.name == "MATCH_FOUND":
+                pii_found = True
+                callback_context.state["PII"] = True
+                if pii_found and last_user_message.lower() != "no":
+                    return LlmResponse(
+                        content=types.Content(
+                            role="model",
+                            parts=[types.Part(text=
+                                            f"""
+                                            Your query has identify the following personal information:
+                                            {sensitive_data.sdp_filter_result.deidentify_result.info_types}
+                                            
+                                            Would you like to continue? (Yes/No)
+                                            """
+                                            )],
+                        )
+                    )
+                elif pii_found and last_user_message.lower() == "yes":
+                    callback_context.state["PII"] = False
+                    return None
+
+        elif jailbreak and jailbreak.pi_and_jailbreak_filter_result:
+            if jailbreak.pi_and_jailbreak_filter_result.match_state.name == "MATCH_FOUND":
+                return LlmResponse(
+                    content=types.Content(
+                        role="model",
+                        parts=[types.Part(text="""Break Reason: Jailbreak""")]
+                    )
+                )
+        return None
+
 
 # Greet user and save their prompt
 
@@ -137,6 +226,7 @@ root_agent = Agent(
     - When the user responds, use the 'add_prompt_to_state' tool to save their response.
     After using the tool, transfer control to the 'tour_guide_workflow' agent.
     """,
+    before_model_callback=guardrail_function,
     tools=[add_prompt_to_state],
     sub_agents=[tour_guide_workflow]
 )

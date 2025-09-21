@@ -28,3 +28,11 @@ output "docker_repo_name" {
 output "docker_repo_uri" {
   value = google_artifact_registry_repository.onboard-repo.registry_uri
 }
+
+output "modelarmor_template_id" {
+  value = google_model_armor_template.onboard-modelarmor-template.id
+}
+
+output "modelarmor_template_name" {
+  value = google_model_armor_template.onboard-modelarmor-template.name
+}
