@@ -11,4 +11,4 @@ WORKDIR /agent-root
 
 EXPOSE 8000
 
-CMD ["adk", "web"]
+CMD ["adk", "web", "--host", "0.0.0.0"]
