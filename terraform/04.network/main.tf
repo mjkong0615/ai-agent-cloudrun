@@ -20,15 +20,14 @@ resource "google_compute_global_address" "ip_address_lb" {
 }
 
 module "lb-http" {
-  source  = "terraform-google-modules/lb-http/google//modules/serverless_negs"
-  version = "~> 12.0"
+  source  = "./serverless_negs"
 
   name    = var.lb_name
   project = local.project_id
 
   ssl                             = var.ssl
   managed_ssl_certificate_domains = [var.domain]
-  https_redirect                  = var.ssl
+  https_redirect                  = false
   labels                          = { "example-label" = "cloud-run-example" }
 
   backends = {
