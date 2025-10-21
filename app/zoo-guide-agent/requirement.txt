@@ -1,0 +1,6 @@
+google-adk==1.14.0
+langchain-community
+wikipedia
+google-cloud-aiplatform
+google-cloud-modelarmor
+google-genai
